@@ -8,18 +8,20 @@ class Pawn:
     def checkIfValid(self, startx, starty, endx, endy, Board):
         if self.firstMove:
             if(startx == endx):
-                if(Board[endx][endy] != "" or abs(startx-endx)>2) return False
-                return True
+                if(Board[endx][endy] != "" or abs(starty-endy)>2):return False
+            elif(startx+1 == endx):
+                if(Board[endx][endy] == "" or abs(starty-endy)>1):return False
+            return True
             self.firstMove = False
-            return("first")
                         
         else:
             if(startx == endx):
-                if(Board[endx][endy] != "" or abs(startx-endx)>1) return False
-                return True
-            return("second")
+                if(Board[endx][endy] != "" or abs(startx-endx)>1):return False
+            elif(startx+1 == endx):
+                if(Board[endx][endy] == "" or abs(starty-endy)>1):return False
+            return True
     def __str__(self):
-        return "Pawn"
+        return "pawn"
 
 class Rook:
     hasMoved = False
@@ -130,12 +132,12 @@ def parseData(data, turnColor):
     moves = ""
     for token in tokens:
         token.lower()
-        if ["pawn", "rook", "bishop", "queen", "king", "knight"].find(token) > -1:
+        if token in ["pawn", "rook", "bishop", "queen", "king", "knight"]:
             piece = token
         elif getCoords(token) != "NA" and len(token)==2:
-            moves = getCoords(token) + token[1]
+            moves = [getCoords(token), token[1]]
         else : return False
-    return(movePiece(piece, turnColor, moves[0], moves[1]))
+    return(movePiece(piece, turnColor, int(moves[0]), int(moves[1])))
 
 def BoardReSet():
     Board[0] = [Rook("black"), Knight("black"), Bishop("black"), Queen("black"), King("black"), Bishop("black"), Knight("black"), Rook("black")]
@@ -163,13 +165,15 @@ def fillBoard():
                 gameDisplay.blit(piece, ((countX-1)*sqrLen + off , (countY-1)*sqrLen))
 
 def movePiece(pieceName, color, endX, endY):
-    for r in len(Board):
-        for c in len(Board):
+    print("Here!")
+    for r in range(len(Board)):
+        for c in range(len(Board)):
             piece = Board[r][c]
             if str(piece) == pieceName and piece.color == color:
-                if piece.checkIfValid(r,c,endX,endY):
+                print("Possiblility")
+                if piece.checkIfValid(r,c,endX,endY,Board):
                     Board[endX][endY] = piece
-                    Board[r][c] = 0
+                    Board[r][c] = ""
                     return True
     return False
 
@@ -178,21 +182,24 @@ def game_loop():
     while True:
         drawBoard()
         fillBoard()
-        #command = speak()
-        #while(not parseData(command, turnColor)):
-            #command = speak()
-        turnColor = "white" if turnColor == "black" else "black"
         pygame.display.update()
+        command = input("Enter the peice and space: ")
+        while(not parseData(command, turnColor)):
+            command = input("Enter the peice and space: ")
+        turnColor = "white" if turnColor == "black" else "black"
+        print("Turn Change")
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
 
 Board = [[0 for x in range(8)] for y in range(8)]
 BoardReSet()
-dimX = int(raw_input("Set the x dimension: "))
-dimY = int(raw_input("Set the y dimension: "))
-sqrLen = dimY/8
+dimX = int(input("Set the x dimension: "))
+dimY = int(input("Set the y dimension: "))
+sqrLen = int(dimY/8)
 off = (dimX-dimY)/2
 gameDisplay = pygame.display.set_mode((dimX, dimY))
 pygame.display.set_caption("Speech Chess")
 
 game_loop()
-pygame.quit()
-quit()
