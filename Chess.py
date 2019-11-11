@@ -1,5 +1,6 @@
 import pygame
 import speech_recognition as sr
+import _thread
 
 class Pawn:
     def __init__(self, c):
@@ -8,9 +9,10 @@ class Pawn:
     def checkIfValid(self, startx, starty, endx, endy, Board):
         if self.firstMove:
             if(startx == endx):
-                if(Board[endx][endy] != "" or abs(starty-endy)>2):return False
-            elif(startx+1 == endx):
-                if(Board[endx][endy] == "" or abs(starty-endy)>1):return False
+                if(Board[endy][endx] != "" or abs(starty-endy)>2):return False
+            elif(abs(startx-endx) == 1):
+                if(Board[endy][endx] == "" or abs(starty-endy)>1):return False
+            else: return False
             return True
             self.firstMove = False
                         
@@ -19,6 +21,7 @@ class Pawn:
                 if(Board[endx][endy] != "" or abs(startx-endx)>1):return False
             elif(startx+1 == endx):
                 if(Board[endx][endy] == "" or abs(starty-endy)>1):return False
+            else: return False
             return True
     def __str__(self):
         return "pawn"
@@ -131,13 +134,13 @@ def parseData(data, turnColor):
     piece = []
     moves = ""
     for token in tokens:
-        token.lower()
-        if token in ["pawn", "rook", "bishop", "queen", "king", "knight"]:
-            piece = token
+        p = token.lower()
+        if p in ["pawn", "rook", "bishop", "queen", "king", "knight"]:
+            piece = token.lower()
         elif getCoords(token) != "NA" and len(token)==2:
             moves = [getCoords(token), token[1]]
         else : return False
-    return(movePiece(piece, turnColor, int(moves[0]), int(moves[1])))
+    return(movePiece(piece, turnColor, int(moves[0]), int(moves[1])-1))
 
 def BoardReSet():
     Board[0] = [Rook("black"), Knight("black"), Bishop("black"), Queen("black"), King("black"), Bishop("black"), Knight("black"), Rook("black")]
@@ -170,30 +173,40 @@ def movePiece(pieceName, color, endX, endY):
         for c in range(len(Board)):
             piece = Board[r][c]
             if str(piece) == pieceName and piece.color == color:
-                print("Possiblility")
-                if piece.checkIfValid(r,c,endX,endY,Board):
-                    Board[endX][endY] = piece
+                print("Possiblility ({0}, {1}), ({2}, {3})".format(c,r,endX,endY))
+                if piece.checkIfValid(c,r,endX,endY,Board):
+                    Board[endY][endX] = piece
                     Board[r][c] = ""
                     return True
     return False
 
+def getInput(turnColor, garb1, garb2):
+    command = input("Enter the piece and space: ")
+    while(not parseData(command, turnColor)):
+        print("Not valid")
+        command = input("Enter the piece and space: ")
+    print("Should be true")
+    validIn[0] = True
+
 def game_loop():
     turnColor = "white"
+    _thread.start_new_thread(getInput, ( turnColor, '', ''))
     while True:
         drawBoard()
         fillBoard()
         pygame.display.update()
-        command = input("Enter the peice and space: ")
-        while(not parseData(command, turnColor)):
-            command = input("Enter the peice and space: ")
-        turnColor = "white" if turnColor == "black" else "black"
-        print("Turn Change")
+        if(validIn[0]): 
+            turnColor = "white" if turnColor == "black" else "black"
+            print("Turn Change")
+            validIn[0] = False
+            _thread.start_new_thread(getInput, ( turnColor, '', ''))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
 
 Board = [[0 for x in range(8)] for y in range(8)]
+validIn = [False]
 BoardReSet()
 dimX = int(input("Set the x dimension: "))
 dimY = int(input("Set the y dimension: "))
