@@ -41,8 +41,6 @@ class Rook:
         elif(starty == endy):
             for x in range(startx+1, endx):
                 if(Board[starty][x] != ""): return False
-            if(Board[endy][endx] != ''):
-                if(Board[endy][endx].color == self.color):return False
             return True
         else:
             return False
@@ -61,8 +59,6 @@ class Bishop:
             ysign = int((endy-starty)/abs(starty-endy))
             for i in range(1, abs(startx-endx)):
                 if(Board[starty + i*ysign][startx + i*xsign] != ""):return False
-            if(Board[endy][endx] != ''):
-                if(Board[endy][endx].color == self.color):return False
             return True
         return False
     def __str__(self):
@@ -73,7 +69,9 @@ class Knight:
     def __init__(self, c):
         self.color = c
     def checkIfValid(self, startx, starty, endx, endy, Board):
-        return ""
+        if(abs(startx-endx)==2 and abs(starty-endy)==1): return True
+        if(abs(startx-endx)==1 and abs(starty-endy)==2): return True
+        return False
     def __str__(self):
         return "knight"
 
@@ -94,7 +92,7 @@ class King:
     def __init__(self, c):
         self.color = c
     def checkIfValid(self, startx, starty, endx, endy, Board):
-        return ""
+        return (abs(startx-endx)<=1 and abs(starty-endy)<=1)
     def castle(self, Board):
         return ""
     def __str__(self):
@@ -195,6 +193,8 @@ def movePiece(pieceName, color, endX, endY):
             if str(piece) == pieceName and piece.color == color:
                 print("Possiblility ({0}, {1}), ({2}, {3})".format(c,r,endX,endY))
                 if piece.checkIfValid(c,r,endX,endY,Board):
+                    if(Board[endY][endX] != ''):
+                        if(Board[endY][endX].color == piece.color):return False
                     Board[endY][endX] = piece
                     Board[r][c] = ""
                     return True
