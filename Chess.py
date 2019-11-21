@@ -13,14 +13,14 @@ class Pawn:
             elif(abs(startx-endx) == 1):
                 if(Board[endy][endx] == "" or abs(starty-endy)>1):return False
             else: return False
-            return True
             self.firstMove = False
+            return True
                         
         else:
             if(startx == endx):
-                if(Board[endx][endy] != "" or abs(startx-endx)>1):return False
-            elif(startx+1 == endx):
-                if(Board[endx][endy] == "" or abs(starty-endy)>1):return False
+                if(Board[endy][endx] != "" or abs(startx-endx)>1):return False
+            elif(startx+1 == endx or startx-1 == endx):
+                if(Board[endy][endx] == "" or abs(starty-endy)>1):return False
             else: return False
             return True
     def __str__(self):
@@ -32,23 +32,41 @@ class Rook:
     def __init__(self, c):
         self.color = c
     def checkIfValid(self, startx ,starty, endx, endy, Board):
-        if(startx == endx or starty == endy):
+        if(startx == endx):
+            for y in range(starty+1, endy):
+                if(Board[y][startx] != ""): return False
+            if(Board[endy][endx] != ''):
+                if(Board[endy][endx].color == self.color):return False
+            return True
+        elif(starty == endy):
+            for x in range(startx+1, endx):
+                if(Board[starty][x] != ""): return False
+            if(Board[endy][endx] != ''):
+                if(Board[endy][endx].color == self.color):return False
             return True
         else:
             return False
     def castle(self, Board):
         return ""
     def __str__(self):
-        return "Rook"
+        return "rook"
 
 class Bishop:
     color = ""
     def __init__(self, c):
         self.color = c
     def checkIfValid(self, startx, starty, endx, endy, Board):
-        return ""
+        if(abs(startx-endx)==abs(starty-endy)):
+            xsign = int((endx-startx)/abs(startx-endx))
+            ysign = int((endy-starty)/abs(starty-endy))
+            for i in range(1, abs(startx-endx)):
+                if(Board[starty + i*ysign][startx + i*xsign] != ""):return False
+            if(Board[endy][endx] != ''):
+                if(Board[endy][endx].color == self.color):return False
+            return True
+        return False
     def __str__(self):
-        return "Bishop"
+        return "bishop"
 
 class Knight:
     color = ""
@@ -57,16 +75,18 @@ class Knight:
     def checkIfValid(self, startx, starty, endx, endy, Board):
         return ""
     def __str__(self):
-        return "Knight"
+        return "knight"
 
 class Queen:
     color = ""
     def __init__(self, c):
         self.color = c
     def checkIfValid(self, startx, starty, endx, endy, Board):
-        return ""
+        r = Rook(self.color)
+        b = Bishop(self.color)
+        return r.checkIfValid(startx, starty, endx, endy, Board) or b.checkIfValid(startx, starty, endx, endy, Board)
     def __str__(self):
-        return "Queen"
+        return "queen"
 
 class King:
     color = ""
@@ -78,7 +98,7 @@ class King:
     def castle(self, Board):
         return ""
     def __str__(self):
-        return "King"
+        return "king"
 
 
 
@@ -101,7 +121,7 @@ def drawBoard():
     white = (255,255,255)
     black = (0,0,0)
     brown = (255,226,129)
-    boxColThing = True
+    boxColThing = False
     gameDisplay.fill(white)
     pygame.draw.rect(gameDisplay, black, [off-15, 0, dimY+15, dimY])
     for y in range(0, 8):
@@ -131,8 +151,8 @@ def speak():
 
 def parseData(data, turnColor):
     tokens = data.split()
-    piece = []
-    moves = ""
+    piece = ""
+    moves = []
     for token in tokens:
         p = token.lower()
         if p in ["pawn", "rook", "bishop", "queen", "king", "knight"]:
@@ -143,13 +163,13 @@ def parseData(data, turnColor):
     return(movePiece(piece, turnColor, int(moves[0]), int(moves[1])-1))
 
 def BoardReSet():
-    Board[0] = [Rook("black"), Knight("black"), Bishop("black"), Queen("black"), King("black"), Bishop("black"), Knight("black"), Rook("black")]
-    Board[1] = [Pawn("black"), Pawn("black"), Pawn("black"), Pawn("black"), Pawn("black"), Pawn("black"), Pawn("black"), Pawn("black")]
+    Board[0] = [Rook("white"), Knight("white"), Bishop("white"), Queen("white"), King("white"), Bishop("white"), Knight("white"), Rook("white")]
+    Board[1] = [Pawn("white"), Pawn("white"), Pawn("white"), Pawn("white"), Pawn("white"), Pawn("white"), Pawn("white"), Pawn("white")]
     for x in range(2, 6):
         for y in range(8):
             Board[x][y] = ""
-    Board[6] = [Pawn("white"), Pawn("white"), Pawn("white"), Pawn("white"), Pawn("white"), Pawn("white"), Pawn("white"), Pawn("white")]
-    Board[7] = [Rook("white"), Knight("white"), Bishop("white"), Queen("white"), King("white"), Bishop("white"), Knight("white"), Rook("white")]
+    Board[6] = [Pawn("black"), Pawn("black"), Pawn("black"), Pawn("black"), Pawn("black"), Pawn("black"), Pawn("black"), Pawn("black")]
+    Board[7] = [Rook("black"), Knight("black"), Bishop("black"), Queen("black"), King("black"), Bishop("black"), Knight("black"), Rook("black")]
 
 def fillBoard():
     countX = 0
@@ -185,7 +205,6 @@ def getInput(turnColor, garb1, garb2):
     while(not parseData(command, turnColor)):
         print("Not valid")
         command = input("Enter the piece and space: ")
-    print("Should be true")
     validIn[0] = True
 
 def game_loop():
@@ -197,7 +216,6 @@ def game_loop():
         pygame.display.update()
         if(validIn[0]): 
             turnColor = "white" if turnColor == "black" else "black"
-            print("Turn Change")
             validIn[0] = False
             _thread.start_new_thread(getInput, ( turnColor, '', ''))
         for event in pygame.event.get():
